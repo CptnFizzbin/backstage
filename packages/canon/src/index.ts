@@ -20,15 +20,18 @@
  * @packageDocumentation
  */
 
-// Layout types
-export * from './layout/types';
-
 // Layout components
 export * from './components/Box';
 export * from './components/Grid';
 export * from './components/Stack';
 export * from './components/Inline';
+export * from './components/Container';
 
 // UI components
 export * from './components/Button';
 export * from './components/Icon';
+export * from './components/Checkbox';
+export * from './components/Table';
+
+// Types
+export * from './types';

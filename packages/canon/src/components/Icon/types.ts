@@ -24,6 +24,7 @@ export type IconNames =
   | 'arrowLeftCircle'
   | 'arrowRightCircle'
   | 'arrowUpCircle'
+  | 'check'
   | 'chevronDown'
   | 'chevronLeft'
   | 'chevronRight'
@@ -35,3 +36,9 @@ export type IconNames =
 
 /** @public */
 export type IconMap = Partial<Record<IconNames, React.ComponentType>>;
+
+/** @public */
+export type IconProps = {
+  name: IconNames;
+  size?: number;
+};

@@ -46,7 +46,7 @@ import {
   RESOURCE_TYPE_SCAFFOLDER_TEMPLATE,
   RESOURCE_TYPE_SCAFFOLDER_TEMPLATE_ENTITY,
   scaffolderActionPermissions,
-  scaffolderTaskPermissions,
+  scaffolderPermissions,
   scaffolderTemplateEntityPermissions,
   scaffolderTemplatePermissions,
   taskCancelPermission,
@@ -470,7 +470,7 @@ export async function createRouter(
         rules: actionRules,
       },
     ],
-    permissions: scaffolderTaskPermissions,
+    permissions: scaffolderPermissions,
   });
 
   router.use(permissionIntegrationRouter);

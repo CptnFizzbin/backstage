@@ -185,119 +185,6 @@ class ExamplePermissionPolicy implements PermissionPolicy {
 }
 ```
 
-## Custom rules
-
-### Define custom rule
-
-The scaffolder plugin exports `createScaffolderTemplateEntityPermissionRule` from `@backstage/plugin-scaffolder-backend/alpha` for this purpose. Note: the `/alpha` path segment is temporary until this API is marked as stable.
-
-For this example, we'll define the rule and create a condition in `packages/backend/src/permissions/rules/scaffolder.ts`.
-
-We use `zod` in our example below. To install them run:
-
-```sh title="from your Backstage root directory"
-yarn --cwd packages/backend add zod
-```
-
-```ts title="packages/backend/src/extensions/scaffolderPermissionRules.ts"
-import z from 'zod';
-import {
-  RESOURCE_TYPE_SCAFFOLDER_TEMPLATE_ENTITY,
-  templateExecutePermission,
-} from '@backstage/plugin-scaffolder-common/alpha';
-import { createScaffolderTemplateEntityPermissionRule } from '@backstage/plugin-scaffolder-backend/alpha';
-import { createConditionFactory } from '@backstage/plugin-permission-node';
-
-const isOwnedByRule = createScaffolderTemplateEntityPermissionRule({
-  name: 'IS_OWNED_BY',
-  resourceType: RESOURCE_TYPE_SCAFFOLDER_TEMPLATE_ENTITY,
-  description: `Match templates that are owned by a entity`,
-  paramsSchema: z.object({
-    ownerRef: z.string().describe('EntityRef of the owner to match'),
-  }),
-  apply: (resource, { ownerRef }) => {
-    if (!resource.relations) {
-      return false;
-    }
-
-    return resource.relations
-      .filter(relation => relation.type === 'ownedBy')
-      .some(relation => relation.targetRef === ownerRef);
-  },
-  toQuery: () => ({}),
-});
-
-export const customScaffolderTemplateEntityConditions = {
-  isOwnedBy: createConditionFactory(isOwnedByRule),
-};
-```
-
-For a more detailed explanation on defining rules, refer to the [documentation for plugin authors](../../permissions/plugin-authors/03-adding-a-resource-permission-check.md/#adding-support-for-conditional-decisions).
-
-### Install custom rules
-
-After defining the new rule, we need to add it to the scaffolder plugin via the `scaffolderPermissionsExtensionPoint` and a Backend module.
-
-```ts title="packages/backend/src/extensions/scaffolderPermissionRules.ts"
-//... File as above
-
-import { scaffolderPermissionsExtensionPoint } from '@backstage/plugin-scaffolder-backend/alpha';
-
-export default createBackendModule({
-  pluginId: 'scaffolder',
-  moduleId: 'permission-rules',
-  register(reg) {
-    reg.registerInit({
-      deps: { scaffolder: scaffolderPermissionsExtensionPoint },
-      async init({ scaffolder }) {
-        scaffolder.addPermissionRule(isOwnedByRule);
-      },
-    });
-  },
-});
-```
-
-Afterwards it can be added to the backend by adding the following line:
-
-```ts title="packages/backend/src/index.ts"
-// catalog plugin
-backend.add(import('@backstage/plugin-catalog-backend'));
-/* highlight-add-start */
-backend.add(import('./extensions/scaffolderPermissionRules'));
-/* highlight-add-end */
-backend.add(import('./permissionPolicy'));
-```
-
-### Use custom rules
-
-Once installed, the custom conditions can be imported and used in your policy:
-
-```ts title="packages/backend/src/extensions/permissionsPolicyExtension.ts"
-import { templateExecutePermission } from '@backstage/plugin-scaffolder-common/alpha';
-import { createScaffolderTemplateEntityConditionalDecision } from '@backstage/plugin-scaffolder-backend/alpha';
-import { customScaffolderTemplateEntityConditions } from './extensions/scaffolderPermissionRules';
-
-class ExamplePermissionPolicy implements PermissionPolicy {
-  async handle(
-    request: PolicyQuery,
-    user?: PolicyQueryUser,
-  ): Promise<PolicyDecision> {
-    if (isPermission(request.permission, templateExecutePermission)) {
-      return createScaffolderTemplateEntityConditionalDecision(
-        request.permission,
-        customScaffolderTemplateEntityConditions.isOwnedBy({
-          ownerRef: user?.info.userEntityRef,
-        }),
-      );
-    }
-
-    return {
-      result: AuthorizeResult.ALLOW,
-    };
-  }
-}
-```
-
 ## Authorizing parameters and steps
 
 The `templateParameterReadPermission` and `templateStepReadPermission` permissions can be used to limit who is able to provide a parameter or execute and action in a template, but they do not block execution of a template. These permissions can be used if a user needs to run different actions based on if they have a particular permission or not.
@@ -594,4 +481,34 @@ backend.add(import('./permissionPolicy'));
 /* highlight-add-end */
 
 // Other plugins...
+```
+
+### Use custom rules
+
+Once installed, the custom conditions can be imported and used in your policy:
+
+```ts title="packages/backend/src/extensions/permissionsPolicyExtension.ts"
+import { templateExecutePermission } from '@backstage/plugin-scaffolder-common/alpha';
+import { createScaffolderTemplateEntityConditionalDecision } from '@backstage/plugin-scaffolder-backend/alpha';
+import { customScaffolderTemplateEntityConditions } from './extensions/scaffolderPermissionRules';
+
+class ExamplePermissionPolicy implements PermissionPolicy {
+  async handle(
+    request: PolicyQuery,
+    user?: PolicyQueryUser,
+  ): Promise<PolicyDecision> {
+    if (isPermission(request.permission, templateExecutePermission)) {
+      return createScaffolderTemplateEntityConditionalDecision(
+        request.permission,
+        customScaffolderTemplateEntityConditions.isOwnedBy({
+          ownerRef: user?.info.userEntityRef,
+        }),
+      );
+    }
+
+    return {
+      result: AuthorizeResult.ALLOW,
+    };
+  }
+}
 ```
