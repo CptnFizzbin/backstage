@@ -13,11 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export {
-  createScaffolderTemplateConditionalDecision,
-  scaffolderTemplateConditions,
-  createScaffolderActionConditionalDecision,
-  scaffolderActionConditions,
-} from './conditionExports';
-
-export * from './rules';
+export { Columns } from './Columns';
