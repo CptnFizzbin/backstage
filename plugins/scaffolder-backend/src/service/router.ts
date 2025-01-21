@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { createLegacyAuthAdapters, HostDiscovery } from '@backstage/backend-common';
+import {
+  createLegacyAuthAdapters,
+  HostDiscovery,
+} from '@backstage/backend-common';
 import {
   AuditorService,
   AuthService,
@@ -29,14 +32,27 @@ import {
   UrlReaderService,
 } from '@backstage/backend-plugin-api';
 import { CatalogApi } from '@backstage/catalog-client';
-import { CompoundEntityRef, Entity, parseEntityRef, stringifyEntityRef, UserEntity } from '@backstage/catalog-model';
+import {
+  CompoundEntityRef,
+  Entity,
+  parseEntityRef,
+  stringifyEntityRef,
+  UserEntity,
+} from '@backstage/catalog-model';
 import { Config, readDurationFromConfig } from '@backstage/config';
 import { InputError, NotFoundError, stringifyError } from '@backstage/errors';
 import { ScmIntegrations } from '@backstage/integration';
-import { IdentityApi, IdentityApiGetIdentityRequest } from '@backstage/plugin-auth-node';
+import {
+  IdentityApi,
+  IdentityApiGetIdentityRequest,
+} from '@backstage/plugin-auth-node';
 import { EventsService } from '@backstage/plugin-events-node';
 import { createConditionAuthorizer } from '@backstage/plugin-permission-node';
-import { TaskSpec, TemplateEntityV1beta3, templateEntityV1beta3Validator } from '@backstage/plugin-scaffolder-common';
+import {
+  TaskSpec,
+  TemplateEntityV1beta3,
+  templateEntityV1beta3Validator,
+} from '@backstage/plugin-scaffolder-common';
 import {
   taskCancelPermission,
   taskCreatePermission,
@@ -51,7 +67,10 @@ import {
   TemplateFilter,
   TemplateGlobal,
 } from '@backstage/plugin-scaffolder-node';
-import { AutocompleteHandler, WorkspaceProvider } from '@backstage/plugin-scaffolder-node/alpha';
+import {
+  AutocompleteHandler,
+  WorkspaceProvider,
+} from '@backstage/plugin-scaffolder-node/alpha';
 import { HumanDuration, JsonObject, JsonValue } from '@backstage/types';
 import express from 'express';
 import Router from 'express-promise-router';
@@ -61,12 +80,23 @@ import { pathToFileURL } from 'url';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 import { z } from 'zod';
-import { createBuiltinActions, DatabaseTaskStore, TaskWorker, TemplateActionRegistry } from '../scaffolder';
+import {
+  createBuiltinActions,
+  DatabaseTaskStore,
+  TaskWorker,
+  TemplateActionRegistry,
+} from '../scaffolder';
 import { createDryRunner } from '../scaffolder/dryrun';
 import { StorageTaskBroker } from '../scaffolder/tasks/StorageTaskBroker';
 import { InternalTaskSecrets } from '../scaffolder/tasks/types';
 import { checkPermission } from '../util/checkPermissions';
-import { findTemplate, getEntityBaseUrl, getWorkingDirectory, parseNumberParam, parseStringsParam } from './helpers';
+import {
+  findTemplate,
+  getEntityBaseUrl,
+  getWorkingDirectory,
+  parseNumberParam,
+  parseStringsParam,
+} from './helpers';
 import { scaffolderActionRules, scaffolderTemplateRules } from '../permissions';
 
 /**

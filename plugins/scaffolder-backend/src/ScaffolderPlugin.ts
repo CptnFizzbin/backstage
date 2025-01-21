@@ -15,11 +15,19 @@
  */
 
 import { loggerToWinstonLogger } from '@backstage/backend-common';
-import { coreServices, createBackendPlugin } from '@backstage/backend-plugin-api';
+import {
+  coreServices,
+  createBackendPlugin,
+} from '@backstage/backend-plugin-api';
 import { ScmIntegrations } from '@backstage/integration';
 import { catalogServiceRef } from '@backstage/plugin-catalog-node/alpha';
 import { eventsServiceRef } from '@backstage/plugin-events-node';
-import { TaskBroker, TemplateAction, TemplateFilter, TemplateGlobal } from '@backstage/plugin-scaffolder-node';
+import {
+  TaskBroker,
+  TemplateAction,
+  TemplateFilter,
+  TemplateGlobal,
+} from '@backstage/plugin-scaffolder-node';
 import {
   AutocompleteHandler,
   scaffolderActionsExtensionPoint,
