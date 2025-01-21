@@ -2,9 +2,6 @@ import React from 'react';
 import type { Preview, ReactRenderer } from '@storybook/react';
 import { withThemeByDataAttribute } from '@storybook/addon-themes';
 
-// Storybook specific styles
-import '../docs/components/styles.css';
-
 // Canon specific styles
 import '../src/css/core.css';
 import '../src/css/components.css';
@@ -88,12 +85,11 @@ const preview: Preview = {
       defaultTheme: 'Light',
     }),
     Story => {
-      document.body.style.backgroundColor = 'var(--canon-background)';
+      document.body.style.backgroundColor = 'var(--canon-bg)';
 
       const docsStoryElements = document.getElementsByClassName('docs-story');
       Array.from(docsStoryElements).forEach(element => {
-        (element as HTMLElement).style.backgroundColor =
-          'var(--canon-background)';
+        (element as HTMLElement).style.backgroundColor = 'var(--canon-bg)';
       });
 
       return (

@@ -14,47 +14,47 @@
  * limitations under the License.
  */
 
-import { ScmIntegrations } from '@backstage/integration';
-import { TaskTrackType, WorkflowResponse, WorkflowRunner } from './types';
-import * as winston from 'winston';
-import fs from 'fs-extra';
-import path from 'path';
-import nunjucks from 'nunjucks';
-import { JsonArray, JsonObject, JsonValue } from '@backstage/types';
 import { InputError, NotAllowedError, stringifyError } from '@backstage/errors';
-import { PassThrough } from 'stream';
-import { generateExampleOutput, isTruthy } from './helper';
-import { validate as validateJsonSchema } from 'jsonschema';
-import { TemplateActionRegistry } from '../actions';
-import { metrics } from '@opentelemetry/api';
-import {
-  SecureTemplater,
-  SecureTemplateRenderer,
-} from '../../lib/templating/SecureTemplater';
+import { ScmIntegrations } from '@backstage/integration';
 import {
   TaskRecovery,
   TaskSpec,
   TaskSpecV1beta3,
   TaskStep,
 } from '@backstage/plugin-scaffolder-common';
-
+import { JsonArray, JsonObject, JsonValue } from '@backstage/types';
+import { metrics } from '@opentelemetry/api';
+import fs from 'fs-extra';
+import { validate as validateJsonSchema } from 'jsonschema';
+import nunjucks from 'nunjucks';
+import path from 'path';
+import { PassThrough } from 'stream';
+import * as winston from 'winston';
 import {
-  TemplateAction,
-  TemplateFilter,
-  TemplateGlobal,
-  TaskContext,
-} from '@backstage/plugin-scaffolder-node';
-import { createConditionAuthorizer } from '@backstage/plugin-permission-node';
+  SecureTemplater,
+  SecureTemplateRenderer,
+} from '../../lib/templating/SecureTemplater';
+import { TemplateActionRegistry } from '../actions';
+import { generateExampleOutput, isTruthy } from './helper';
+import { TaskTrackType, WorkflowResponse, WorkflowRunner } from './types';
+import type { AuditorService } from '@backstage/backend-plugin-api';
+import { PermissionsService } from '@backstage/backend-plugin-api';
 import { UserEntity } from '@backstage/catalog-model';
-import { createCounterMetric, createHistogramMetric } from '../../util/metrics';
-import { createDefaultFilters } from '../../lib/templating/filters';
 import {
   AuthorizeResult,
   PolicyDecision,
 } from '@backstage/plugin-permission-common';
+import { createConditionAuthorizer } from '@backstage/plugin-permission-node';
+import {
+  TaskContext,
+  TemplateAction,
+  TemplateFilter,
+  TemplateGlobal,
+} from '@backstage/plugin-scaffolder-node';
+import { createDefaultFilters } from '../../lib/templating/filters';
 import { actionExecutePermission } from '@backstage/plugin-scaffolder-common/alpha';
-import { PermissionsService } from '@backstage/backend-plugin-api';
 import { loggerToWinstonLogger } from '@backstage/backend-common';
+import { createCounterMetric, createHistogramMetric } from '../../util/metrics';
 import { BackstageLoggerTransport, WinstonLogger } from './logger';
 import { scaffolderActionRules } from '../../permissions';
 
@@ -63,6 +63,7 @@ type NunjucksWorkflowRunnerOptions = {
   actionRegistry: TemplateActionRegistry;
   integrations: ScmIntegrations;
   logger: winston.Logger;
+  auditor?: AuditorService;
   additionalTemplateFilters?: Record<string, TemplateFilter>;
   additionalTemplateGlobals?: Record<string, TemplateGlobal>;
   permissions?: PermissionsService;
@@ -127,7 +128,7 @@ const createStepLogger = ({
   // Initially this stream used to be the only way to write to the client logs, but that
   // has changed over time, there's not really a need for this anymore.
   // You can just create a simple wrapper like the below in your action to write to the main logger.
-  // This way we also get recactions for free.
+  // This way we also get redactions for free.
   const streamLogger = new PassThrough();
   streamLogger.on('data', async data => {
     const message = data.toString().trim();
@@ -145,91 +146,11 @@ const isActionAuthorized = createConditionAuthorizer(
 
 export class NunjucksWorkflowRunner implements WorkflowRunner {
   private readonly defaultTemplateFilters: Record<string, TemplateFilter>;
+  private readonly tracker = scaffoldingTracker();
 
   constructor(private readonly options: NunjucksWorkflowRunnerOptions) {
     this.defaultTemplateFilters = createDefaultFilters({
       integrations: this.options.integrations,
-    });
-  }
-
-  private readonly tracker = scaffoldingTracker();
-
-  private isSingleTemplateString(input: string) {
-    const { parser, nodes } = nunjucks as unknown as {
-      parser: {
-        parse(
-          template: string,
-          ctx: object,
-          options: nunjucks.ConfigureOptions,
-        ): { children: { children?: unknown[] }[] };
-      };
-      nodes: { TemplateData: Function };
-    };
-
-    const parsed = parser.parse(
-      input,
-      {},
-      {
-        autoescape: false,
-        tags: {
-          variableStart: '${{',
-          variableEnd: '}}',
-        },
-      },
-    );
-
-    return (
-      parsed.children.length === 1 &&
-      !(parsed.children[0]?.children?.[0] instanceof nodes.TemplateData)
-    );
-  }
-
-  private render<T>(
-    input: T,
-    context: TemplateContext,
-    renderTemplate: SecureTemplateRenderer,
-  ): T {
-    return JSON.parse(JSON.stringify(input), (_key, value) => {
-      try {
-        if (typeof value === 'string') {
-          try {
-            if (this.isSingleTemplateString(value)) {
-              // Lets convert ${{ parameters.bob }} to ${{ (parameters.bob) | dump }} so we can keep the input type
-              const wrappedDumped = value.replace(
-                /\${{(.+)}}/g,
-                '${{ ( $1 ) | dump }}',
-              );
-
-              // Run the templating
-              const templated = renderTemplate(wrappedDumped, context);
-
-              // If there's an empty string returned, then it's undefined
-              if (templated === '') {
-                return undefined;
-              }
-
-              // Reparse the dumped string
-              return JSON.parse(templated);
-            }
-          } catch (ex) {
-            this.options.logger.error(
-              `Failed to parse template string: ${value} with error ${ex.message}`,
-            );
-          }
-
-          // Fallback to default behaviour
-          const templated = renderTemplate(value, context);
-
-          if (templated === '') {
-            return undefined;
-          }
-
-          return templated;
-        }
-      } catch {
-        return value;
-      }
-      return value;
     });
   }
 
@@ -245,7 +166,9 @@ export class NunjucksWorkflowRunner implements WorkflowRunner {
     const stepTrack = await this.tracker.stepStart(task, step);
 
     if (task.cancelSignal.aborted) {
-      throw new Error(`Step ${step.name} has been cancelled.`);
+      throw new Error(
+        `Step ${step.id} (${step.name}) of task ${task.taskId} has been cancelled.`,
+      );
     }
 
     try {
@@ -454,7 +377,9 @@ export class NunjucksWorkflowRunner implements WorkflowRunner {
       context.steps[step.id] = { output: stepOutput };
 
       if (task.cancelSignal.aborted) {
-        throw new Error(`Step ${step.name} has been cancelled.`);
+        throw new Error(
+          `Step ${step.id} (${step.name}) of task ${task.taskId} has been cancelled.`,
+        );
       }
 
       await stepTrack.markSuccessful();
@@ -535,6 +460,85 @@ export class NunjucksWorkflowRunner implements WorkflowRunner {
         await fs.remove(workspacePath);
       }
     }
+  }
+
+  private isSingleTemplateString(input: string) {
+    const { parser, nodes } = nunjucks as unknown as {
+      parser: {
+        parse(
+          template: string,
+          ctx: object,
+          options: nunjucks.ConfigureOptions,
+        ): { children: { children?: unknown[] }[] };
+      };
+      nodes: { TemplateData: Function };
+    };
+
+    const parsed = parser.parse(
+      input,
+      {},
+      {
+        autoescape: false,
+        tags: {
+          variableStart: '${{',
+          variableEnd: '}}',
+        },
+      },
+    );
+
+    return (
+      parsed.children.length === 1 &&
+      !(parsed.children[0]?.children?.[0] instanceof nodes.TemplateData)
+    );
+  }
+
+  private render<T>(
+    input: T,
+    context: TemplateContext,
+    renderTemplate: SecureTemplateRenderer,
+  ): T {
+    return JSON.parse(JSON.stringify(input), (_key, value) => {
+      try {
+        if (typeof value === 'string') {
+          try {
+            if (this.isSingleTemplateString(value)) {
+              // Lets convert ${{ parameters.bob }} to ${{ (parameters.bob) | dump }} so we can keep the input type
+              const wrappedDumped = value.replace(
+                /\${{(.+)}}/g,
+                '${{ ( $1 ) | dump }}',
+              );
+
+              // Run the templating
+              const templated = renderTemplate(wrappedDumped, context);
+
+              // If there's an empty string returned, then it's undefined
+              if (templated === '') {
+                return undefined;
+              }
+
+              // Reparse the dumped string
+              return JSON.parse(templated);
+            }
+          } catch (ex) {
+            this.options.logger.error(
+              `Failed to parse template string: ${value} with error ${ex.message}`,
+            );
+          }
+
+          // Fallback to default behaviour
+          const templated = renderTemplate(value, context);
+
+          if (templated === '') {
+            return undefined;
+          }
+
+          return templated;
+        }
+      } catch {
+        return value;
+      }
+      return value;
+    });
   }
 }
 
