@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { z } from 'zod';
-import { get } from 'lodash';
-import { JsonObject, JsonPrimitive } from '@backstage/types';
-import { RESOURCE_TYPE_SCAFFOLDER_ACTION } from '@backstage/plugin-scaffolder-common/alpha';
 import { makeCreatePermissionRule } from '@backstage/plugin-permission-node';
+import { RESOURCE_TYPE_SCAFFOLDER_ACTION } from '@backstage/plugin-scaffolder-common/alpha';
+import { z } from 'zod';
+import { JsonObject, JsonPrimitive } from '@backstage/types';
+import { get } from 'lodash';
 
 /**
  * @public

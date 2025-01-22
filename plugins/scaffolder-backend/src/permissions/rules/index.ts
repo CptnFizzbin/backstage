@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './scaffolderActionRules.ts';
-export * from './scaffolderTemplateRules.ts';
+export * from './scaffolderActionRules';
+export * from './scaffolderTemplateRules';

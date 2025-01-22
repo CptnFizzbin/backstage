@@ -1,5 +1,5 @@
 ---
-'@backstage/plugin-scaffolder-backend': major
+'@backstage/plugin-scaffolder-backend': minor
 ---
 
-_BREAKING_: legacy `permissionRules` option for scaffolder Router was removed. Please upgrade to the new backend system and use the `coreServices.permissionsRegistry` to add custom rules
+`permissionRules` option in `createRouter()` is deprecated. Please upgrade to the new backend system and use `coreServices.permissionsRegistry` to add custom rules

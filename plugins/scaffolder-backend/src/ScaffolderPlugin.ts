@@ -208,6 +208,7 @@ export const scaffolderPlugin = createBackendPlugin({
           additionalWorkspaceProviders,
           events,
           auditor,
+          usesPermissionRegistry: true,
         });
         httpRouter.use(router);
 

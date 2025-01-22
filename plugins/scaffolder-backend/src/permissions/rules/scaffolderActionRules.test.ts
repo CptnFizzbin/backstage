@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { JsonObject, JsonPrimitive } from '@backstage/types';
 import { scaffolderActionRules } from './scaffolderActionRules';
+import { createConditionAuthorizer } from '@backstage/plugin-permission-node';
 import { RESOURCE_TYPE_SCAFFOLDER_ACTION } from '@backstage/plugin-scaffolder-common/alpha';
 import { AuthorizeResult } from '@backstage/plugin-permission-common';
-import { createConditionAuthorizer } from '@backstage/plugin-permission-node';
 
 describe('hasActionId', () => {
   describe('apply', () => {

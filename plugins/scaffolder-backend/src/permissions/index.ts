@@ -15,4 +15,4 @@
  */
 
 export * from './rules';
-export * from './conditionExports.ts';
+export * from './conditionExports';
