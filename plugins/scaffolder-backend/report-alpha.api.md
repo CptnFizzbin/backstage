@@ -200,7 +200,7 @@ export const scaffolderActionRules: {
 // @alpha
 export const scaffolderTemplateConditions: Conditions<{
   hasTag: PermissionRule<
-    TemplateEntityStepV1beta3 | TemplateParametersV1beta3,
+    TemplateParametersV1beta3 | TemplateEntityStepV1beta3,
     {},
     'scaffolder-template',
     {
