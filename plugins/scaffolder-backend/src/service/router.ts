@@ -26,6 +26,7 @@ import {
   DiscoveryService,
   HttpAuthService,
   LifecycleService,
+  PermissionsRegistryService,
   PermissionsService,
   resolveSafeChildPath,
   SchedulerService,
@@ -192,11 +193,7 @@ export interface RouterOptions {
   events?: EventsService;
   auditor?: AuditorService;
   autocompleteHandlers?: Record<string, AutocompleteHandler>;
-
-  /**
-   * @internal
-   */
-  usesPermissionRegistry?: boolean;
+  permissionsRegistry?: PermissionsRegistryService;
 }
 
 function isSupportedTemplate(entity: TemplateEntityV1beta3) {
@@ -309,7 +306,7 @@ export async function createRouter(
     autocompleteHandlers = {},
     events: eventsService,
     auditor,
-    usesPermissionRegistry = false,
+    permissionsRegistry,
   } = options;
 
   const { auth, httpAuth } = createLegacyAuthAdapters({
@@ -452,7 +449,7 @@ export async function createRouter(
     ...actionRules,
   ]);
 
-  if (!usesPermissionRegistry) {
+  if (!permissionsRegistry) {
     const permissionIntegrationRouter = createPermissionIntegrationRouter({
       resources: [
         {
