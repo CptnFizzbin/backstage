@@ -169,27 +169,74 @@ export const WithOptions: Story = {
 };
 
 export const WithCustomActions: Story = {
+  args: {},
+  decorators: [withRouter],
+  render: args => (
+    <Header
+      {...args}
+      customActions={
+        <>
+          <ButtonIcon variant="tertiary" icon={<RiCloudy2Line />} />
+          <ButtonIcon variant="tertiary" icon={<RiEmotionHappyLine />} />
+          <ButtonIcon variant="tertiary" icon={<RiHeartLine />} />
+        </>
+      }
+    />
+  ),
+};
+
+export const WithAllOptions: Story = {
   args: {
-    customActions: <Button>Custom action</Button>,
+    title: 'My plugin',
+    titleLink: '/',
     menuItems,
   },
   decorators: [withRouter],
+  render: WithCustomActions.render,
 };
 
 export const WithBreadcrumbs: Story = {
   args: {
     breadcrumbs,
+    tabs,
   },
   decorators: [withRouter],
 };
 
-export const WithAllComponents: Story = {
+export const WithAllOptionsAndTabs: Story = {
   args: {
-    menuItems,
+    ...WithAllOptions.args,
     tabs,
-    breadcrumbs,
   },
   decorators: [withRouter],
+  render: WithAllOptions.render,
+};
+
+export const WithHeaderPage: Story = {
+  args: {
+    ...WithAllOptionsAndTabs.args,
+  },
+  decorators: [withRouter],
+  render: args => (
+    <>
+      <Header
+        {...args}
+        customActions={
+          <>
+            <ButtonIcon variant="tertiary" icon={<RiCloudy2Line />} />
+            <ButtonIcon variant="tertiary" icon={<RiEmotionHappyLine />} />
+            <ButtonIcon variant="tertiary" icon={<RiHeartLine />} />
+          </>
+        }
+      />
+      <HeaderPage
+        title="Page title"
+        menuItems={args.menuItems}
+        tabs={tabs2}
+        customActions={<Button>Custom action</Button>}
+      />
+    </>
+  ),
 };
 
 export const WithLayout: Story = {
@@ -268,10 +315,10 @@ export const WithMockedURLCampaigns: Story = {
     <MemoryRouter initialEntries={['/campaigns']}>
       <Header {...args} />
       <Container>
-        <Text>
+        <Text as="p">
           Current URL is mocked to be: <strong>/campaigns</strong>
         </Text>
-        <Text>
+        <Text as="p">
           Notice how the "Campaigns" tab is selected (highlighted) because it
           matches the current path.
         </Text>
@@ -288,10 +335,10 @@ export const WithMockedURLIntegrations: Story = {
     <MemoryRouter initialEntries={['/integrations']}>
       <Header {...args} />
       <Container>
-        <Text>
+        <Text as="p">
           Current URL is mocked to be: <strong>/integrations</strong>
         </Text>
-        <Text>
+        <Text as="p">
           Notice how the "Integrations" tab is selected (highlighted) because it
           matches the current path.
         </Text>
@@ -308,14 +355,14 @@ export const WithMockedURLNoMatch: Story = {
     <MemoryRouter initialEntries={['/some-other-page']}>
       <Header {...args} />
       <Container>
-        <Text>
+        <Text as="p">
           Current URL is mocked to be: <strong>/some-other-page</strong>
         </Text>
-        <Text>
+        <Text as="p">
           No tab is selected because the current path doesn't match any tab's
           href.
         </Text>
-        <Text>
+        <Text as="p">
           Tabs without href (like "Overview", "Checks", "Tracks") fall back to
           React Aria's internal state.
         </Text>
